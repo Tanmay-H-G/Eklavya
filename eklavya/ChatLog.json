@@ -1,0 +1,42 @@
+[
+    {
+        "role": "user",
+        "content": "Open whatsapp"
+    },
+    {
+        "role": "assistant",
+        "content": "Opening whatsapp."
+    },
+    {
+        "role": "user",
+        "content": "Open whatsapp and message tanmay gatkule hi"
+    },
+    {
+        "role": "assistant",
+        "content": "Opening whatsapp and message tanmay gatkule hi."
+    },
+    {
+        "role": "user",
+        "content": "Open whatsapp and message tanmay gatkule hi"
+    },
+    {
+        "role": "assistant",
+        "content": "Opening whatsapp and message tanmay gatkule hi."
+    },
+    {
+        "role": "user",
+        "content": "Who is prime miniter of india"
+    },
+    {
+        "role": "assistant",
+        "content": "The current Prime Minister of India is Narendra Modi, Admin."
+    },
+    {
+        "role": "user",
+        "content": "Who is president of america"
+    },
+    {
+        "role": "assistant",
+        "content": "The current President of the United States is Joe Biden, Admin."
+    }
+]

@@ -1,0 +1,36 @@
+# Eklavya / JARVIS — Python requirements
+# Install: pip install -r requirements.txt
+
+# ── AI ────────────────────────────────────────────
+google-generativeai>=0.7.0     # Gemini (free: 1500 req/day)
+groq>=0.9.0                    # Groq API — Llama 3.1 (very fast)
+cohere>=5.0.0                  # Cohere (optional)
+
+# ── Voice TTS ─────────────────────────────────────
+edge-tts>=6.1.9                # Microsoft neural TTS (online)
+pyttsx3>=2.90                  # Offline TTS fallback
+pygame>=2.5.0                  # Audio playback for edge-tts
+
+# ── System control ────────────────────────────────
+psutil>=5.9.0                  # CPU/RAM/battery/processes
+pyautogui>=0.9.54              # Screenshots, keyboard
+Pillow>=10.0.0                 # Screenshot save
+AppOpener>=1.7.0               # Smart app open/close by name
+
+# ── Windows volume ────────────────────────────────
+pycaw>=20181226                # Windows audio volume API
+comtypes>=1.2.0                # COM interface for pycaw
+
+# ── Web search (for RSE) ──────────────────────────
+requests>=2.31.0               # HTTP requests
+beautifulsoup4>=4.12.0         # HTML parsing for search results
+
+# ── UI framework ──────────────────────────────────
+eel>=0.16.0                    # Python + Chrome web UI bridge
+
+# ── Utilities ─────────────────────────────────────
+python-dotenv>=1.0.0           # Load .env file
+mtranslate>=1.4.1              # Translation
+rich>=13.0.0                   # Terminal colors
+keyboard>=0.13.5               # Keyboard shortcuts
+pywhatkit>=5.4                 # WhatsApp, YouTube (optional)

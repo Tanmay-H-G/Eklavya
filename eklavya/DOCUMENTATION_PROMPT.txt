@@ -1,0 +1,38 @@
+### Documentation Generation Prompt
+
+**Instruction**: Use the following technical context to write a comprehensive, professional, and user-friendly documentation for the project "Eklavya".
+
+---
+
+#### **Project Context: Eklavya AI Assistant**
+**What is it?**
+A modular, JARVIS-inspired AI Desktop Assistant for Windows. It features multi-user login, voice/text input, and can control the computer (apps, volume, music, system stats).
+
+**Core Tech Stack**:
+- **Backend**: Python 3.10+
+- **UI Framework**: Eel (bridge between Python and a local Chrome window)
+- **Database**: SQLite (managed via `Backend/Database.py`)
+- **Intent Engine**: Hybrid Regex + LLM Classifier (`AutoModel.py`) using Groq (Llama 3).
+- **AI Models**: Gemini 1.5 Flash (default), Groq, and Ollama (local).
+- **Voice System**: browser-based Speech-to-Text and `edge-tts` (neural) Text-to-Speech.
+
+#### **Key Modules to Document**:
+1. **`main.py`**: The entry point. Initializes Eel, hooks up Python functions to JS, and starts the system stats monitoring.
+2. **`Backend/AutoModel.py`**: The "brain" that decides if a user wants to chat, search the web, or perform a system action. Uses Regex first, then falls back to Groq for complex requests.
+3. **`Backend/Automation.py`**: The "hands" of the assistant. Handles opening apps (Chrome, VS Code, etc.), adjusting volume (pycaw), taking screenshots, and sending WhatsApp messages.
+4. **`Backend/Database.py`**: A production-grade SQL layer involving user registration, bcrypt password hashing, and session management.
+5. **`Backend/RSE.py`**: Real-time Search Engine. Bypasses the AI knowledge cutoff by searching DuckDuckGo and summarizing results.
+6. **`Backend/TTS.py`**: High-quality neural voice output.
+
+#### **Desired Documentation Sections**:
+1. **Getting Started**: Clear installation steps (env setup, API keys, chrome requirement).
+2. **Architecture Diagram**: Explanation of how a query moves from UI -> Classifier -> Execution.
+3. **Feature List**: Categorized list (Automation, AI, Search, System Stats).
+4. **Developer Guide**: How to add new commands in `AutoModel.py` and `Automation.py`.
+5. **Database Schema**: Overview of the tables (users, conversations, preferences).
+6. **Troubleshooting**: Common fixes for Mic issues, API errors, and PyAudio installation.
+
+---
+
+**Tone**: Professional, technical but accessible (like a Top-tier GitHub README or GitBook doc).
+**Formats to generate**: A long-form `README.md` and a technical `WIKI.md`.
