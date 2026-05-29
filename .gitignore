@@ -1,0 +1,30 @@
+# Environment variables and API keys
+.env
+
+# Python system/compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local chat logs & temporary notes
+ChatLog.json
+notes.json
+contacts.json
+.cache
+
+# Local SQLite databases (contains private chat history and user details)
+*.db
+*.sqlite3
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# Operating system files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+.DS_Store
