@@ -1,8 +1,74 @@
-# Eklavya — JARVIS-Inspired AI Assistant
+# Eklavya AI Assistant
+AI desktop assistant built with Python, Gemini AI, Groq LLMs, voice recognition, automation, and real-time web search.
 
----
+## Features
+* Voice-controlled AI assistant
+* Gemini AI integration
+* Groq LLM fallback
+* Real-time web search
+* Windows automation
+* Text-to-speech responses
+* System monitoring
+* Notes and reminders
 
-## ⚡ How to Run (exact steps, no guessing)
+## Screenshots
+### Home Screen
+![Home Screen](Assets/home-screen.png) 
+
+## Demo Video
+
+(Add YouTube demo link)
+
+## Technologies Used
+
+* Python
+* Gemini API
+* Groq API
+* Eel
+* Edge-TTS
+* PyAudio
+* DuckDuckGo Search
+* WMI
+* SQLite
+
+## Installation
+
+(paste your existing installation steps)
+
+## Project Structure
+eklavya/
+│
+├── main.py                  ← ENTRY POINT — run this
+├── .env                     ← Your API keys (EDIT THIS)
+├── requirements.txt         ← pip packages
+├── install.bat              ← Windows auto-installer
+├── ChatLog.json             ← Auto-created: conversation history
+├── notes.json               ← Auto-created: saved notes
+│
+├── Backend/
+│   ├── __init__.py          ← Package marker
+│   ├── AutoModel.py         ← Query classifier (pattern match + Groq)
+│   ├── Chatbot.py           ← Gemini 1.5 Flash — general conversation
+│   ├── ChatGpt.py           ← Groq Llama 3.1 — fast AI + Gemini fallback
+│   ├── RSE.py               ← Real-time search (DuckDuckGo + Groq synthesis)
+│   ├── Automation.py        ← All Windows OS actions
+│   ├── TTS.py               ← edge-tts (neural) + pyttsx3 (fallback)
+│   ├── Extra.py             ← Message helpers, formatters, file I/O
+│   └── StatsPusher.py       ← Pushes CPU/RAM/battery to UI every 8s
+│
+└── web/
+    ├── spider.html          ← Full premium UI (HTML/CSS/JS)
+    └── eel.js               ← WebSocket bridge (do not edit)
+
+## Voice Commands
+
+(paste your existing commands section)
+
+## License
+MIT License
+
+
+## ⚡ How to Run
 
 ### Step 1 — Prerequisites
 - **Python 3.10+** → https://python.org/downloads (check "Add to PATH")
@@ -37,9 +103,7 @@ pipwin install pyaudio
 ```
 
 ### Step 4 — Run
-```batch
 python main.py
-```
 Chrome opens automatically with the Eklavya UI.
 
 ---
