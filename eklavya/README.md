@@ -18,10 +18,6 @@ AI desktop assistant built with Python, Gemini AI, Groq LLMs, voice recognition,
 ### Conversation Screen
 ![Conversation](web/Assets/conversation-screen.png)
 
-## Demo Video
-
-(Add YouTube demo link)
-
 ## Technologies Used
 
 * Python
@@ -33,10 +29,6 @@ AI desktop assistant built with Python, Gemini AI, Groq LLMs, voice recognition,
 * DuckDuckGo Search
 * WMI
 * SQLite
-
-## Installation
-
-(paste your existing installation steps)
 
 ## Project Structure
 eklavya/
@@ -63,13 +55,8 @@ eklavya/
     ├── spider.html          ← Full premium UI (HTML/CSS/JS)
     └── eel.js               ← WebSocket bridge (do not edit)
 
-## Voice Commands
-
-(paste your existing commands section)
-
 ## License
 MIT License
-
 
 ## ⚡ How to Run
 
@@ -162,10 +149,6 @@ eklavya/
 ### Text
 Type in the bottom bar. Press **Enter** to send.
 
-### Quick chips
-Click any suggestion chip on the welcome screen.
-
----
 
 ## 🧠 How Commands Are Processed
 
