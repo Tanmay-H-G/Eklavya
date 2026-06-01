@@ -13,7 +13,7 @@ AI desktop assistant built with Python, Gemini AI, Groq LLMs, voice recognition,
 
 ## Screenshots
 ### Home Screen
-![Home Screen](Assets/home-screen.png) 
+![Home Screen](web/Assets/home-screen.png)
 
 ## Demo Video
 
