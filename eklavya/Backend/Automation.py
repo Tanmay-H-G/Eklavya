@@ -327,7 +327,7 @@ def _play_spotify(query: str) -> str:
       2. Open the URI directly via OS (spotify:track:<id>), which is 100% reliable.
       3. Falls back to keyword-based URI or browser if API keys missing.
     """
-    import threading, os, webbrowser, re
+    import threading, os, webbrowser, re, urllib.parse
     from random import choice as _choice
 
     # Handle random/vague queries
@@ -337,6 +337,9 @@ def _play_spotify(query: str) -> str:
         query = _choice(['Top Hits 2024', 'Lofi Chill', 'Pop Mix',
                          'Chill Vibes', 'Bollywood Hits', 'Global Top 50'])
 
+    # Clean up leading noise (e.g. "play music ", "music ")
+    query = re.sub(r'^(play\s+|listen\s+to\s+|put\s+on\s+|music\s+|song\s+|track\s+)+', '', query, flags=re.IGNORECASE).strip()
+    # Clean up trailing noise
     query = re.sub(r'\s+(song|music|track)$', '', query, flags=re.IGNORECASE).strip()
 
     def _open_and_play():
@@ -365,9 +368,10 @@ def _play_spotify(query: str) -> str:
                 except Exception as e:
                     print(f"[Automation] Spotipy search failed: {e}")
 
-            # Fallback 1: Use spotify:search:<query> URI
-            print(f"[Automation] Spotify API blocked (requires Premium). Using Desktop Search fallback for: {query}")
-            os.startfile(f"spotify:search:{query}")
+            # Fallback 1: Use spotify:search:<query> URI (URL-encoded to prevent shell space truncation)
+            quoted_query = urllib.parse.quote(query)
+            print(f"[Automation] Spotify API blocked or missing. Using Desktop Search fallback for: {query}")
+            os.startfile(f"spotify:search:{quoted_query}")
             
             # Automated playback attempt for Free users
             import time
@@ -378,13 +382,17 @@ def _play_spotify(query: str) -> str:
                 # Wait up to 5 seconds for Spotify to appear
                 for _ in range(10):
                     time.sleep(0.5)
-                    windows = [w for w in gw.getWindowsWithTitle('Spotify') if w.title == 'Spotify']
+                    # Check window title case-insensitively for 'spotify'
+                    windows = [w for w in gw.getWindowsWithTitle('Spotify') if 'spotify' in w.title.lower()]
                     if windows:
                         win = windows[0]
                         try:
                             if not win.isActive:
+                                if hasattr(win, 'restore'):
+                                    win.restore()
                                 win.activate()
-                        except: pass
+                        except Exception as activate_err:
+                            print(f"[Automation] Window activation failed: {activate_err}")
                         
                         # Wait for search results to load from the internet
                         time.sleep(2.5) 
@@ -540,8 +548,20 @@ def _set_volume_abs(level: int) -> str:
             _vol_interface.SetMasterVolumeLevelScalar(level / 100, None)
             return f"Volume set to {level}%."
         except Exception as e:
-            return f"Volume set error: {e}"
-    return f"Volume control unavailable. Tried to set {level}%."
+            print(f"[Automation] Volume interface failed: {e}")
+            pass
+    # Keyboard fallback:
+    # First, bring volume to 0 by pressing volumedown 50 times (each step is 2%)
+    try:
+        import pyautogui
+        for _ in range(50):
+            pyautogui.press('volumedown')
+        # Then, increase it to the target level (each volumeup press increases by 2%)
+        for _ in range(level // 2):
+            pyautogui.press('volumeup')
+        return f"Volume set to {level}% via keyboard fallback."
+    except Exception as e:
+        return f"Volume control unavailable. Failed to set volume: {e}"
 
 
 def _toggle_mute() -> str:

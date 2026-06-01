@@ -819,6 +819,7 @@ let pollTimer      = null;
 let authTabMode    = 'login';
 let currentMode    = 'gemini';
 let isLoggedIn     = false;
+let currentSessionId = 'default';
 const SESSION_KEY  = 'eklavya_session_token';
 const MODE_KEY     = 'eklavya_ai_mode';
 
@@ -1056,6 +1057,7 @@ async function initApp(username) {
   startPolling();
   startClock();
   loadDbStats();
+  updateHistorySidebar();
   document.getElementById('txtInput').focus();
 }
 
@@ -1216,6 +1218,9 @@ async function sendText() {
   const text = inp.value.trim();
   if (!text || !isLoggedIn) return;
 
+  // Interrupt ongoing speech instantly on send
+  try { eel.js_stop_speech()(); } catch(err) {}
+
   inp.value = '';
   inp.style.height = '';
 
@@ -1238,6 +1243,9 @@ function sendQuick(text) {
 }
 
 function handleKey(e) {
+  // Stop speech playback as soon as user starts typing
+  try { eel.js_stop_speech()(); } catch(err) {}
+
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendText(); }
 }
 
@@ -1254,51 +1262,56 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('collapsed');
 }
 
-function updateHistorySidebar() {
-  const list    = document.getElementById('historyList');
-  const bubbles = document.querySelectorAll('.msg.user .bubble');
-  if (!bubbles.length) {
-    list.innerHTML = '<div style="color:var(--t3);font-size:12px;text-align:center;padding:20px">No history yet</div>';
-    return;
-  }
+async function updateHistorySidebar() {
+  const list = document.getElementById('historyList');
+  if (!isLoggedIn) return;
 
-  // Get unique last 10 messages to show as "Recent Prompts"
-  const items = [];
-  const seen  = new Set();
-  const raw   = Array.from(bubbles).reverse();
-  
-  for (const b of raw) {
-    const txt = b.textContent.trim();
-    if (!seen.has(txt) && items.length < 10) {
-      items.push(b);
-      seen.add(txt);
-    }
-  }
-
-  let html = '<div class="history-section"><div class="history-label">Recent Prompts</div>';
-  items.forEach(bubble => {
-    let txt = bubble.textContent.trim();
-    if (txt.length > 28) txt = txt.substring(0, 28) + '…';
-    html += `<div class="history-item" title="${esc(bubble.textContent.trim())}" onclick="scrollToMessage(this)">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      ${esc(txt)}
-    </div>`;
-  });
-  html += '</div>';
-  list.innerHTML = html;
-}
-
-function scrollToMessage(el) {
-  // Find the corresponding message bubble by title text
-  const titleText = el.getAttribute('title');
-  const bubbles   = document.querySelectorAll('.msg.user .bubble');
-  for (const b of bubbles) {
-    if (b.textContent.trim() === titleText) {
-      b.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      b.style.outline = '2px solid var(--blue)';
-      setTimeout(() => b.style.outline = '', 1500);
+  try {
+    const sessions = await eel.js_get_sessions()();
+    if (!sessions || !sessions.length) {
+      list.innerHTML = '<div style="color:var(--t3);font-size:12px;text-align:center;padding:20px">No history yet</div>';
       return;
     }
+
+    let html = '<div class="history-section"><div class="history-label">Recent Conversations</div>';
+    sessions.forEach(s => {
+      const activeClass = s.session_id === currentSessionId ? ' active' : '';
+      html += `<div class="history-item${activeClass}" data-id="${esc(s.session_id)}" onclick="loadSession('${esc(s.session_id)}')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        ${esc(s.title)}
+      </div>`;
+    });
+    html += '</div>';
+    list.innerHTML = html;
+  } catch (e) {
+    console.error('[Sidebar] Error fetching sessions:', e);
+  }
+}
+
+async function loadSession(sessionId) {
+  if (!isLoggedIn) return;
+  try {
+    const success = await eel.js_load_session(sessionId)();
+    if (success) {
+      currentSessionId = sessionId;
+      document.getElementById('chatInner').innerHTML = '';
+      hasMessages = false;
+      
+      // Stop ongoing speech on session switch
+      try { eel.js_stop_speech()(); } catch(err) {}
+
+      // Triggers immediate polling to fetch this session's history
+      const msgs = await eel.js_messages()();
+      if (msgs && msgs.length) {
+        msgs.forEach(m => addMessage(m.role, m.content));
+      }
+      const st = await eel.js_state()();
+      if (st) updateStatus(st);
+      
+      updateHistorySidebar();
+    }
+  } catch(e) {
+    console.error('[Session] Load error:', e);
   }
 }
 
@@ -1333,19 +1346,49 @@ document.getElementById('confirmModal').addEventListener('click', function(e) {
 
 function confirmClearChat() {
   openModal(
-    'Clear Conversation?',
-    'This will permanently delete all messages in the current conversation.',
+    'New Conversation',
+    'Start a new conversation session? Your current conversation will be saved in your history.',
     async () => {
       try {
-        await eel.js_clear_chat()();
-        document.getElementById('chatInner').innerHTML = '';
-        hasMessages = false;
-        js_messageslist_local = [];
-        document.getElementById('historyList').innerHTML = '<div style="color:var(--t3);font-size:12px;text-align:center;padding:20px">No history yet</div>';
-        setStatus('Online', '');
-      } catch(e) {}
+        // Stop ongoing speech on new conversation
+        try { eel.js_stop_speech()(); } catch(err) {}
+
+        const newSessionId = await eel.js_clear_chat()();
+        if (newSessionId) {
+          currentSessionId = newSessionId;
+          document.getElementById('chatInner').innerHTML = '';
+          hasMessages = false;
+          
+          // Re-insert welcome screen to make UI beautiful and active!
+          const ci = document.getElementById('chatInner');
+          const welcome = document.createElement('div');
+          welcome.className = 'welcome';
+          welcome.id = 'welcomeScreen';
+          welcome.innerHTML = `
+            <div class="welcome-orb">⚡</div>
+            <div class="welcome-h" id="welcomeH">Hello, ${document.getElementById('sbUsername').textContent}.</div>
+            <div class="welcome-sub">Say <strong>${assistantName}</strong> or type a message below.</div>
+            <div class="welcome-chips">
+              <div class="wchip" onclick="sendQuick('Who is the president of USA?')">Who is US president?</div>
+              <div class="wchip" onclick="sendQuick('Open Chrome')">Open Chrome</div>
+              <div class="wchip" onclick="sendQuick('What time is it?')">What time is it?</div>
+              <div class="wchip" onclick="sendQuick('Play Shape of You on Spotify')">Play on Spotify</div>
+              <div class="wchip" onclick="sendQuick('Take a screenshot')">Screenshot</div>
+              <div class="wchip" onclick="sendQuick('What can you do?')">What can you do?</div>
+              <div class="wchip" onclick="sendQuick('System status')">System status</div>
+              <div class="wchip" onclick="sendQuick('Increase volume by 20')">Volume up</div>
+            </div>
+          `;
+          ci.appendChild(welcome);
+
+          updateHistorySidebar();
+          setStatus('Online', '');
+        }
+      } catch(e) {
+        console.error('[Session] Error starting new session:', e);
+      }
     },
-    'Clear All'
+    'Start New'
   );
 }
 
@@ -1391,31 +1434,47 @@ function setupSpeechRecognition() {
       const transcript = event.results[i][0].transcript.trim().toLowerCase();
       if (!transcript) continue;
 
-      if (wakeWordActive) {
+      console.log('[VOICE] Final transcript:', transcript);
+
+      if (isListening) {
+        isListening = false;
+        setMicActive(false);
+        document.getElementById('voiceBar').classList.remove('show');
+        handleVoiceCommand(transcript);
+      } else if (wakeWordActive) {
         const wakeWords = [assistantName.toLowerCase(), 'jarvis', 'hey jarvis', 'okay jarvis'];
         const isWake = wakeWords.some(w => transcript.includes(w));
         if (isWake) {
           let cmd = transcript;
           for (const w of wakeWords) cmd = cmd.replace(w, '');
           cmd = cmd.replace(/^[,\s]+/, '').trim();
-          setMicActive(true);
-          setStatus('Listening…', 'listening');
-          document.getElementById('voiceBar').classList.add('show');
-          if (cmd && cmd.length > 1) { handleVoiceCommand(cmd); }
-          else { isListening = true; }
-        } else if (isListening && transcript.length > 1) {
-          isListening = false;
-          document.getElementById('voiceBar').classList.remove('show');
-          handleVoiceCommand(transcript);
+          
+          if (cmd && cmd.length > 1) {
+            // Stop speech playback instantly on voice trigger
+            try { eel.js_stop_speech()(); } catch(err) {}
+            handleVoiceCommand(cmd);
+          } else {
+            isListening = true;
+            setMicActive(true);
+            setStatus('Listening…', 'listening');
+            document.getElementById('voiceBar').classList.add('show');
+            // Interrupt speech playback when wake word is spoken
+            try { eel.js_stop_speech()(); } catch(err) {}
+          }
         }
       }
     }
   };
 
   recognition.onerror = (event) => {
-    if (event.error === 'not-allowed') document.getElementById('micBanner').classList.add('show');
-    setMicActive(false); isListening = false;
-    document.getElementById('voiceBar').classList.remove('show');
+    console.warn('[VOICE] Error:', event.error);
+    if (event.error === 'not-allowed') {
+      document.getElementById('micBanner').classList.add('show');
+    }
+    if (event.error === 'aborted' || event.error === 'not-allowed') {
+      setMicActive(false); isListening = false;
+      document.getElementById('voiceBar').classList.remove('show');
+    }
   };
 
   recognition.onend = () => {
@@ -1445,15 +1504,21 @@ function toggleVoice() {
     isListening = true; setMicActive(true);
     setStatus('Listening…', 'listening');
     document.getElementById('voiceBar').classList.add('show');
-    try { recognition.stop(); } catch(e) {}
-    setTimeout(() => { try { recognition.start(); } catch(e) {} }, 200);
+    
+    // Stop ongoing speech playback instantly
+    try { eel.js_stop_speech()(); } catch(e) {}
+    
+    // Make sure recognition is active without stopping first (avoiding race conditions)
+    try { recognition.start(); } catch(e) {}
+    
+    // Timeout listening state after 8 seconds of silence
     setTimeout(() => {
       if (isListening) {
         isListening = false; setMicActive(false);
         document.getElementById('voiceBar').classList.remove('show');
         if (!isThinking) setStatus('Online', '');
       }
-    }, 10000);
+    }, 8000);
   }
 }
 

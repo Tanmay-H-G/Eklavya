@@ -415,14 +415,14 @@ def load_chats(user_id: int, limit: int = 50, session_id: str = None) -> list:
             cursor.execute(
                 '''SELECT role, content FROM conversations
                    WHERE user_id=? AND session_id=?
-                   ORDER BY timestamp DESC LIMIT ?''',
+                   ORDER BY timestamp DESC, id DESC LIMIT ?''',
                 (user_id, session_id, limit)
             )
         else:
             cursor.execute(
                 '''SELECT role, content FROM conversations
                    WHERE user_id=?
-                   ORDER BY timestamp DESC LIMIT ?''',
+                   ORDER BY timestamp DESC, id DESC LIMIT ?''',
                 (user_id, limit)
             )
         rows = cursor.fetchall()
@@ -430,6 +430,48 @@ def load_chats(user_id: int, limit: int = 50, session_id: str = None) -> list:
         return [{'role': r[0], 'content': r[1]} for r in reversed(rows)]
     except Exception as e:
         print(f"[Database] Load chats error: {e}")
+        return []
+
+
+def get_user_sessions(user_id: int) -> list:
+    """
+    Get all unique sessions for a user, sorted by the latest activity.
+    Uses the first user message in that session as the conversation title.
+    Optimized query for minimal memory/CPU consumption.
+    """
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        # Find unique session_ids for this user, get first user prompt as the title,
+        # and get the latest timestamp of any message in that session.
+        cursor.execute('''
+            SELECT session_id, 
+                   (SELECT content FROM conversations 
+                    WHERE user_id=? AND session_id=c.session_id AND role='user' 
+                    ORDER BY id ASC LIMIT 1) as title,
+                   MAX(timestamp) as last_activity
+            FROM conversations c
+            WHERE user_id=?
+            GROUP BY session_id
+            ORDER BY last_activity DESC
+        ''', (user_id, user_id))
+        rows = cursor.fetchall()
+        conn.close()
+        
+        sessions = []
+        for r in rows:
+            sid = r[0]
+            title = r[1] or "New Conversation"
+            if len(title) > 28:
+                title = title[:28] + "…"
+            sessions.append({
+                'session_id': sid,
+                'title': title,
+                'timestamp': r[2]
+            })
+        return sessions
+    except Exception as e:
+        print(f"[Database] get_user_sessions error: {e}")
         return []
 
 

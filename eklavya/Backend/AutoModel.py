@@ -120,7 +120,7 @@ ACTION_PATTERNS = [
      lambda m: ['mute']),
     (r'^unmute(?:\s+(?:audio|sound|volume))?',
      lambda m: ['unmute']),
-    (r'set(?: the)? volume to\s+(\d+)',
+    (r'(?:set\s+)?(?:the\s+)?volume\s+(?:to\s+)?(\d+)',
      lambda m: [f'set_volume {m.group(1)}']),
 
     # ── Time / Date ──

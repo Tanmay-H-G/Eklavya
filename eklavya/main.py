@@ -99,7 +99,7 @@ def MainExecution(Query: str):
                 Answer = AnswerModifier(ChatBotAI(Query, user_id=CURRENT_USER_ID, mode=AI_MODE, session_id=CURRENT_SESSION_ID))
             else:
                 state  = 'Searching...'
-                Answer = AnswerModifier(RealTimeChatBotAI(Query, user_id=CURRENT_USER_ID)) # RealTime might need session too but usually it's one-off
+                Answer = AnswerModifier(RealTimeChatBotAI(Query, user_id=CURRENT_USER_ID, session_id=CURRENT_SESSION_ID))
 
             print(f"[PIPELINE] Answer: {Answer[:100]}...")
             TTS(Answer)
@@ -366,10 +366,51 @@ def js_clear_chat():
         CURRENT_SESSION_ID = f"session_{int(time.time())}"
         js_messageslist = []
         print(f"[Session] Started new session: {CURRENT_SESSION_ID}")
-        return True
+        return CURRENT_SESSION_ID
     except Exception as e:
         print(f"[eel] New session error: {e}")
         return False
+
+
+@eel.expose
+def js_get_sessions():
+    """Get all unique chat sessions for the logged-in user."""
+    if not CURRENT_USER_ID:
+        return []
+    try:
+        from Backend.Database import get_user_sessions
+        return get_user_sessions(CURRENT_USER_ID)
+    except Exception as e:
+        print(f"[eel] js_get_sessions error: {e}")
+        return []
+
+
+@eel.expose
+def js_load_session(session_id: str):
+    """Load a specific chat session."""
+    global CURRENT_SESSION_ID, js_messageslist
+    try:
+        CURRENT_SESSION_ID = session_id
+        js_messageslist = []
+        print(f"[Session] Switched to session: {CURRENT_SESSION_ID}")
+        return True
+    except Exception as e:
+        print(f"[eel] js_load_session error: {e}")
+        return False
+
+
+@eel.expose
+def js_stop_speech():
+    """Immediately stop any ongoing TTS speech playback (user interruption)."""
+    try:
+        import pygame
+        if pygame.mixer.get_init() and pygame.mixer.music.get_busy():
+            pygame.mixer.music.stop()
+            print("[TTS] Speech interrupted by user.")
+            return True
+    except Exception as e:
+        print(f"[eel] js_stop_speech error: {e}")
+    return False
 
 
 # ── Python → JavaScript helpers ───────────────────────────────────────────────

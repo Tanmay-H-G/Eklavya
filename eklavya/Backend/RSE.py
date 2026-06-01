@@ -67,10 +67,10 @@ def _search_google_news(query: str) -> str:
         return ""
 
 
-def RealTimeChatBotAI(query: str, user_id: int = None) -> str:
+def RealTimeChatBotAI(query: str, user_id: int = None, session_id: str = 'default') -> str:
     """
     Search the web for current information and use Groq to synthesize a natural spoken answer.
-    Properly saves conversation with user_id for history persistence.
+    Properly saves conversation with user_id and session_id for history persistence.
     """
     print(f"[RSE] Searching for: '{query}'")
 
@@ -113,8 +113,8 @@ Address the user as {USERNAME}."""
         )
 
         answer = response.choices[0].message.content.strip()
-        SaveMessage('user',      query,  user_id=user_id)
-        SaveMessage('assistant', answer, user_id=user_id)
+        SaveMessage('user',      query,  user_id=user_id, session_id=session_id)
+        SaveMessage('assistant', answer, user_id=user_id, session_id=session_id)
         return answer
 
     except Exception as e:
@@ -122,9 +122,9 @@ Address the user as {USERNAME}."""
         # Fallback to Gemini
         try:
             from Backend.Chatbot import ChatBotAI
-            return ChatBotAI(query, user_id=user_id)
+            return ChatBotAI(query, user_id=user_id, session_id=session_id)
         except Exception:
             err = f"I had trouble searching for that right now, {USERNAME}. Please try again."
-            SaveMessage('user',      query, user_id=user_id)
-            SaveMessage('assistant', err,   user_id=user_id)
+            SaveMessage('user',      query, user_id=user_id, session_id=session_id)
+            SaveMessage('assistant', err,   user_id=user_id, session_id=session_id)
             return err
